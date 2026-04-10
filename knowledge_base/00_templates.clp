@@ -7,10 +7,12 @@
 ;;   - id: Unique identifier for the patient (SYMBOL)
 ;;   - fpg: Fasting Plasma Glucose level in mg/dL (FLOAT)
 ;;   - hba1c: Hemoglobin A1c percentage (FLOAT)
+;;   - type-1-indicators: Presence of Type-1 indicators (SYMBOL: yes/no)
 (deftemplate patient
   (slot id (type SYMBOL))
   (slot fpg (type FLOAT))
-  (slot hba1c (type FLOAT)))
+  (slot hba1c (type FLOAT))
+  (slot type-1-indicators (type SYMBOL)))
 
 ;; Template: Clinical Finding
 ;;   - patient-id: Reference to the patient record (SYMBOL)

@@ -39,12 +39,25 @@ while true; do
     fi
 done
 
+while true; do
+    read -p "¿Indicadores de Diabetes Tipo 1 presentes? (antecedentes familiares, debut temprano, marcadores autoinmunes) (sí/no): " TYPE1_IND
+    if [[ "$TYPE1_IND" =~ ^(sí|si|yes|no|no)$ ]]; then
+        if [[ "$TYPE1_IND" == "sí" ]] || [[ "$TYPE1_IND" == "si" ]]; then
+            TYPE1_IND="yes"
+        elif [[ "$TYPE1_IND" == "no" ]]; then
+            TYPE1_IND="no"
+        fi
+        break
+    else
+        echo "ERROR: Por favor responda sí o no."
+    fi
+done
+
 echo ""
 echo ">> Procesando datos del paciente..."
 echo ""
 
 # Convertir FPG y HbA1c para asegurar que se traten como flotantes en CLIPS
-# Si no tienen punto decimal, agregar .0
 FPG_FLOAT=$(echo "$FPG" | grep -q '\.' && echo "$FPG" || echo "$FPG.0")
 HBAIC_FLOAT=$(echo "$HBAIC" | grep -q '\.' && echo "$HBAIC" || echo "$HBAIC.0")
 
@@ -56,7 +69,7 @@ clips << EOFCLIPS
 (load "03_diagnostic_es.clp")
 (load "04_cli_es.clp")
 (reset)
-(assert (patient (id $PATIENT_ID) (fpg $FPG_FLOAT) (hba1c $HBAIC_FLOAT)))
+(assert (patient (id $PATIENT_ID) (fpg $FPG_FLOAT) (hba1c $HBAIC_FLOAT) (type-1-indicators $TYPE1_IND)))
 (assert (system-state (phase validation)))
 (run)
 (exit)
