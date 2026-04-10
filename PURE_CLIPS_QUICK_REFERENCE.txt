@@ -1,0 +1,190 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                   PURE CLIPS EXPERT SYSTEM - QUICK REFERENCE              ║
+║                   Diabetes Diagnosis - All In CLIPS                       ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─ FILE STRUCTURE ──────────────────────────────────────────────────────────┐
+│                                                                            │
+│  knowledge_base/                                                           │
+│  ├── 00_templates.clp            (4 deftemplates)                        │
+│  ├── 01_validation.clp           (5 validation defrules)                 │
+│  ├── 02_abstraction.clp          (7 abstraction defrules)                │
+│  ├── 03_diagnostic.clp           (4 diagnostic defrules)                 │
+│  ├── 04_cli.clp                  (7 UI defrules) ← NEW                  │
+│  ├── CLIPS_COMMANDS.sh           (Linux/Mac script)                      │
+│  └── CLIPS_CONSOLE_INSTRUCTIONS.txt (Detailed guide)                    │
+│                                                                            │
+│  clips_run.bat                   (Windows batch file)                     │
+│  PURE_CLIPS_GUIDE.md             (Complete documentation)                │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ QUICK START ─────────────────────────────────────────────────────────────┐
+│                                                                            │
+│  LINUX/MAC:                      WINDOWS:                                 │
+│  $ clips                          > clips.exe                             │
+│  CLIPS> (batch 00_templates.clp) CLIPS> (batch 00_templates.clp)        │
+│  CLIPS> (batch 01_validation.clp) CLIPS> (batch 01_validation.clp)      │
+│  CLIPS> (batch 02_abstraction.clp) CLIPS> (batch 02_abstraction.clp)    │
+│  CLIPS> (batch 03_diagnostic.clp) CLIPS> (batch 03_diagnostic.clp)      │
+│  CLIPS> (batch 04_cli.clp)       CLIPS> (batch 04_cli.clp)              │
+│  CLIPS> (reset)                  CLIPS> (reset)                         │
+│  CLIPS> (run)                    CLIPS> (run)                           │
+│                                                                            │
+│  OR: clips < CLIPS_CONSOLE_INSTRUCTIONS.txt                             │
+│  OR: ./clips_run.bat (Windows)                                           │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ EXECUTION FLOW ──────────────────────────────────────────────────────────┐
+│                                                                            │
+│  (initial-fact)                                                          │
+│         ↓                                                                  │
+│  startup-display-welcome  ←─ PROMPTS FOR INPUT                          │
+│         ↓                                                                  │
+│  patient fact asserted                                                   │
+│  system-state (phase validation) asserted                               │
+│         ↓                                                                  │
+│  Validation rules fire                                                   │
+│         ↓                                                                  │
+│  ✓ If valid:              ✗ If invalid:                                 │
+│    Abstraction rules        system-state (phase error)                  │
+│    → clinical-findings      output-validation-error                    │
+│    Diagnostic rules                                                      │
+│    → diagnosis fact                                                      │
+│    output-diagnosis-success prints report                              │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ RULES IN 04_CLI.CLP ─────────────────────────────────────────────────────┐
+│                                                                            │
+│  1. startup-display-welcome                                             │
+│     • Triggers on (initial-fact)                                        │
+│     • Displays welcome banner                                           │
+│     • Prompts for Patient ID, FPG, HbA1c                               │
+│     • Uses (read) to capture input                                      │
+│     • Asserts patient fact                                              │
+│     • Asserts validation state                                          │
+│                                                                            │
+│  2. output-diagnosis-success                                            │
+│     • Triggers when diagnosis complete                                  │
+│     • Prints formatted medical report                                   │
+│     • Shows: Patient ID, Classification, Justification                 │
+│                                                                            │
+│  3. output-validation-error                                             │
+│     • Triggers on validation failure                                    │
+│     • Prints error message                                              │
+│                                                                            │
+│  4. output-abstraction-status                                           │
+│     • Prints status when entering abstraction phase                    │
+│                                                                            │
+│  5. output-diagnostic-status                                            │
+│     • Prints status when entering diagnostic phase                     │
+│                                                                            │
+│  6-7. trace-validation-passed, trace-clinical-findings                 │
+│     • Optional debugging rules (commented out)                         │
+│     • Uncomment for detailed trace output                              │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ TEST CASES ──────────────────────────────────────────────────────────────┐
+│                                                                            │
+│  TEST 1: TYPE 2 DIABETES                                                 │
+│  Input:  ID=1001, FPG=145.0, HbA1c=7.2                                 │
+│  Output: type-2-diabetes                                                │
+│                                                                            │
+│  TEST 2: PREDIABETES                                                     │
+│  Input:  ID=1002, FPG=110.0, HbA1c=6.0                                 │
+│  Output: prediabetes                                                     │
+│                                                                            │
+│  TEST 3: NORMAL                                                          │
+│  Input:  ID=1003, FPG=90.0, HbA1c=5.2                                  │
+│  Output: normal                                                          │
+│                                                                            │
+│  TEST 4: VALIDATION ERROR                                               │
+│  Input:  ID=1004, FPG=-50.0, HbA1c=6.0                                 │
+│  Output: ERROR - Validation failed                                      │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ CLIPS COMMANDS ──────────────────────────────────────────────────────────┐
+│                                                                            │
+│  (batch file.clp)              Load file                                 │
+│  (reset)                       Clear memory, init                        │
+│  (run)                         Execute inference                         │
+│  (read)                        Read user input                           │
+│  (printout t "text" crlf)      Print to console                         │
+│  (assert (fact ...))           Add fact                                  │
+│  (facts)                       List all facts                            │
+│  (rules)                       List all rules                            │
+│  (exit)                        Exit CLIPS                                │
+│  (watch rules)                 Watch rule firing                         │
+│  (unwatch all)                 Stop watching                             │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DIAGNOSTIC FACTS STRUCTURE ──────────────────────────────────────────────┐
+│                                                                            │
+│  (patient (id ?id) (fpg ?fpg) (hba1c ?hba1c))                           │
+│                                                                            │
+│  (clinical-finding (patient-id ?id) (biomarker ?bm) (condition ?cond))  │
+│    biomarker: fpg | hba1c                                               │
+│    condition: diabetic-range | prediabetic-range | normal-range        │
+│                                                                            │
+│  (diagnosis (patient-id ?id) (classification ?c) (justification ?j))    │
+│    classification: type-2-diabetes | prediabetes | normal              │
+│                                                                            │
+│  (system-state (phase ?phase))                                          │
+│    phase: validation | abstraction | diagnostic | complete | error    │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ INPUT VALIDATION CRITERIA ──────────────────────────────────────────────┐
+│                                                                            │
+│  Valid FPG:      0 ≤ FPG ≤ 600 mg/dL                                    │
+│  Valid HbA1c:    0 ≤ HbA1c ≤ 15%                                        │
+│                                                                            │
+│  Diagnostic Thresholds (ADA):                                            │
+│  Type 2 Diabetes: FPG ≥ 126 AND HbA1c ≥ 6.5                            │
+│  Prediabetes:     (100 ≤ FPG < 126) OR (5.7 ≤ HbA1c < 6.5)            │
+│  Normal:          FPG < 100 AND HbA1c < 5.7                            │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ TROUBLESHOOTING ─────────────────────────────────────────────────────────┐
+│                                                                            │
+│  "File not found"                                                        │
+│  → Use absolute paths or cd to project directory                       │
+│  → (chdir "/full/path")                                               │
+│                                                                            │
+│  "Unknown variable ?x"                                                  │
+│  → Load all files in order (00 → 04)                                  │
+│                                                                            │
+│  "CLIPS hangs at (read)"                                               │
+│  → Enter value and press Enter                                         │
+│                                                                            │
+│  "Rule not found"                                                       │
+│  → Check file is loaded: (rules)                                       │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DOCUMENTATION ──────────────────────────────────────────────────────────┐
+│                                                                            │
+│  Complete Guide:                                                         │
+│  → PURE_CLIPS_GUIDE.md                                                 │
+│                                                                            │
+│  Console Commands:                                                       │
+│  → knowledge_base/CLIPS_CONSOLE_INSTRUCTIONS.txt                      │
+│                                                                            │
+│  Shell Script (Linux/Mac):                                              │
+│  → knowledge_base/CLIPS_COMMANDS.sh                                   │
+│                                                                            │
+│  Batch File (Windows):                                                  │
+│  → clips_run.bat                                                        │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  Status: ✅ READY TO USE                                                  ║
+║  All files created. Run (batch ...) to load and (reset) then (run)       ║
+╚════════════════════════════════════════════════════════════════════════════╝

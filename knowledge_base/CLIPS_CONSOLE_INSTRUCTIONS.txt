@@ -1,0 +1,215 @@
+================================================================================
+CLIPS CONSOLE COMMANDS - DIABETES EXPERT SYSTEM
+Pure CLIPS Implementation (No C++ Wrapper)
+================================================================================
+
+STEP 1: START CLIPS
+================================================================================
+
+Type this in your terminal:
+  clips
+
+Or on Windows:
+  clips.exe
+
+You should see the CLIPS banner and prompt (CLIPS> or similar)
+
+================================================================================
+STEP 2: LOAD ALL KNOWLEDGE BASE FILES IN ORDER
+================================================================================
+
+Copy and paste EACH of these commands into the CLIPS console:
+
+(batch knowledge_base/00_templates.clp)
+
+(batch knowledge_base/01_validation.clp)
+
+(batch knowledge_base/02_abstraction.clp)
+
+(batch knowledge_base/03_diagnostic.clp)
+
+(batch knowledge_base/04_cli.clp)
+
+You should see confirmation messages like "FALSE" or "CLIPS>" after each.
+
+NOTE: If you get "File not found" errors:
+  - Make sure you are in the correct directory (the project root)
+  - Use (chdir "C:/path/to/project") to change directories
+
+================================================================================
+STEP 3: RESET THE ENVIRONMENT
+================================================================================
+
+Type this command:
+
+(reset)
+
+This will:
+  - Clear the working memory
+  - Assert the (initial-fact) automatically
+  - Trigger the startup-display-welcome rule
+
+================================================================================
+STEP 4: RUN THE INFERENCE ENGINE
+================================================================================
+
+Type this command:
+
+(run)
+
+This will:
+  - Execute the startup rule (displays welcome and prompts for input)
+  - Wait for you to enter Patient ID, FPG, and HbA1c
+  - Fire all inference rules in sequence
+  - Display the final diagnosis
+
+================================================================================
+COMPLETE COMMAND SEQUENCE (All at Once)
+================================================================================
+
+If your CLIPS environment supports multi-line input or script files,
+you can paste all commands at once:
+
+(batch knowledge_base/00_templates.clp)
+(batch knowledge_base/01_validation.clp)
+(batch knowledge_base/02_abstraction.clp)
+(batch knowledge_base/03_diagnostic.clp)
+(batch knowledge_base/04_cli.clp)
+(reset)
+(run)
+
+================================================================================
+SAMPLE TEST RUN
+================================================================================
+
+When prompted by the system, enter these test values:
+
+Patient ID:      1001
+FPG (mg/dL):     145.0
+HbA1c (%):       7.2
+
+Expected Output:
+  Classification: type-2-diabetes
+  Justification: Both FPG >= 126 mg/dL and HbA1c >= 6.5% meet diagnostic 
+                 criteria for Type 2 Diabetes Mellitus
+
+================================================================================
+OTHER USEFUL CLIPS COMMANDS (Optional)
+================================================================================
+
+View all facts currently in working memory:
+  (facts)
+
+View all defrules:
+  (rules)
+
+Check current directory:
+  (getenv "PWD")
+
+Change to a different directory:
+  (chdir "/path/to/directory")
+
+Manually assert a patient fact (if needed):
+  (assert (patient (id 1001) (fpg 145.0) (hba1c 7.2)))
+
+Manually assert system state:
+  (assert (system-state (phase validation)))
+
+Exit CLIPS:
+  (exit)
+
+or
+
+  Ctrl+D
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+ERROR: File not found - knowledge_base/00_templates.clp
+SOLUTION: 
+  1. Check that you are in the project root directory
+  2. Use (chdir "path") to navigate
+  3. Use absolute paths: (batch "/full/path/to/00_templates.clp")
+
+ERROR: Unknown variable ?patient-id
+SOLUTION:
+  This is expected if you're running just one file. Always load in order.
+
+ERROR: Undefined rule startup-display-welcome
+SOLUTION:
+  The 04_cli.clp file wasn't loaded. Check loading order.
+
+CLIPS seems hung or unresponsive:
+SOLUTION:
+  Press Ctrl+C to interrupt
+  Type (reset) to clear state
+  Try (run) again
+
+================================================================================
+LINUX/MAC AUTOMATED RUN
+================================================================================
+
+If you want to automate the entire sequence, create a script file with
+all commands, then use:
+
+  clips < script_file.txt
+
+Example script_file.txt contents:
+---
+(batch knowledge_base/00_templates.clp)
+(batch knowledge_base/01_validation.clp)
+(batch knowledge_base/02_abstraction.clp)
+(batch knowledge_base/03_diagnostic.clp)
+(batch knowledge_base/04_cli.clp)
+(reset)
+(run)
+(exit)
+---
+
+Then run:
+  clips < script_file.txt
+
+================================================================================
+WINDOWS BATCH FILE
+================================================================================
+
+See: clips_run.bat
+
+This file automates the entire process on Windows.
+Just double-click to run.
+
+================================================================================
+EXPECTED OUTPUT FLOW
+================================================================================
+
+1. Welcome banner displays
+
+2. System prompts:
+   Enter Patient ID (integer): 
+   Enter Fasting Plasma Glucose (FPG) in mg/dL (float): 
+   Enter Hemoglobin A1c (HbA1c) in % (float): 
+
+3. Data summary displays
+
+4. Inference engine fires:
+   ========== ABSTRACTION PHASE ==========
+   Interpreting biomarker values...
+   
+   ========== DIAGNOSTIC PHASE ==========
+   Generating diagnostic conclusions...
+
+5. Diagnosis report displays:
+   ========================================
+     DIAGNOSTIC REPORT
+   ========================================
+   
+   Patient ID: 1001
+   Classification: type-2-diabetes
+   Justification: ...
+
+6. Processing complete
+
+================================================================================
+END OF INSTRUCTIONS
+================================================================================
