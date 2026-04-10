@@ -1,56 +1,64 @@
-;;; ============================================================================
-;;; VALIDATION MODULE
-;;; Input validation rules that execute during the validation phase
-;;; Catches invalid biomarker values and halts the system with error state
-;;; ============================================================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                           VALIDATION PHASE RULES                           ;;
+;;                   Data Integrity and Constraint Checking                    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Rule: Detect negative Fasting Plasma Glucose
-(defrule validate-fpg-negative
-  "Halt system if FPG is negative"
+;; Rule: Detect invalid Fasting Plasma Glucose value
+;;   If FPG is negative (clinically impossible), mark data as invalid and block progression
+(defrule validate-negative-fpg
+  (declare (salience 100))
   (system-state (phase validation))
-  (patient (id ?pid) (fpg ?fpg&:(< ?fpg 0.0)))
+  (patient (id ?pid) (fpg ?fpg))
+  (test (< ?fpg 0.0))
   =>
-  (printout t "ERROR: Patient " ?pid " has invalid FPG value: " ?fpg " mg/dL" crlf)
-  (assert (system-state (phase error)))
-  (retract (system-state (phase validation))))
+  (printout t crlf "ERROR: Negative FPG value detected (" ?fpg " mg/dL)." crlf)
+  (assert (invalid-data (patient-id ?pid) (error "Negative FPG"))))
 
-;;; Rule: Detect negative HbA1c
-(defrule validate-hba1c-negative
-  "Halt system if HbA1c is negative"
+;; Rule: Detect invalid Hemoglobin A1c value
+;;   If HbA1c is negative (clinically impossible), mark data as invalid and block progression
+(defrule validate-negative-hba1c
+  (declare (salience 100))
   (system-state (phase validation))
-  (patient (id ?pid) (hba1c ?hba1c&:(< ?hba1c 0.0)))
+  (patient (id ?pid) (hba1c ?hba1c))
+  (test (< ?hba1c 0.0))
   =>
-  (printout t "ERROR: Patient " ?pid " has invalid HbA1c value: " ?hba1c "%" crlf)
-  (assert (system-state (phase error)))
-  (retract (system-state (phase validation))))
+  (printout t crlf "ERROR: Negative HbA1c value detected (" ?hba1c "%)." crlf)
+  (assert (invalid-data (patient-id ?pid) (error "Negative HbA1c"))))
 
-;;; Rule: Detect unrealistic FPG values (> 600 mg/dL is life-threatening)
-(defrule validate-fpg-extreme
-  "Halt system if FPG exceeds physiological limits"
+;; Rule: Detect unrealistic HbA1c upper bound
+;;   HbA1c readings above 15% are extremely rare and likely erroneous
+(defrule validate-excessive-hba1c
+  (declare (salience 100))
   (system-state (phase validation))
-  (patient (id ?pid) (fpg ?fpg&:(> ?fpg 600.0)))
+  (patient (id ?pid) (hba1c ?hba1c))
+  (test (> ?hba1c 15.0))
   =>
-  (printout t "ERROR: Patient " ?pid " has extreme FPG value: " ?fpg " mg/dL (>600)" crlf)
-  (assert (system-state (phase error)))
-  (retract (system-state (phase validation))))
+  (printow t crlf "ERROR: Unrealistic HbA1c value detected (" ?hba1c "%)." crlf)
+  (assert (invalid-data (patient-id ?pid) (error "Excessive HbA1c"))))
 
-;;; Rule: Detect unrealistic HbA1c values (> 15.0% is extreme)
-(defrule validate-hba1c-extreme
-  "Halt system if HbA1c exceeds physiological limits"
+;; Rule: Detect unrealistic FPG upper bound
+;;   FPG readings above 800 mg/dL are typically incompatible with life
+(defrule validate-excessive-fpg
+  (declare (salience 100))
   (system-state (phase validation))
-  (patient (id ?pid) (hba1c ?hba1c&:(> ?hba1c 15.0)))
+  (patient (id ?pid) (fpg ?fpg))
+  (test (> ?fpg 800.0))
   =>
-  (printout t "ERROR: Patient " ?pid " has extreme HbA1c value: " ?hba1c "% (>15.0)" crlf)
-  (assert (system-state (phase error)))
-  (retract (system-state (phase validation))))
+  (printout t crlf "ERROR: Unrealistic FPG value detected (" ?fpg " mg/dL)." crlf)
+  (assert (invalid-data (patient-id ?pid) (error "Excessive FPG"))))
 
-;;; Rule: Advance to abstraction phase if validation passes
-(defrule validation-passed
-  "Transition to abstraction phase after successful validation"
-  ?state <- (system-state (phase validation))
+;; Rule: Transition to Abstraction phase on successful validation
+;;   If no invalid-data facts exist after validation, proceed to abstraction
+(defrule validate-success-transition
+  (declare (salience -50))
+  (system-state (phase validation))
   (patient (id ?pid))
-  (not (system-state (phase error)))
+  (not (invalid-data))
   =>
-  (retract ?state)
+  (retract (system-state (phase validation)))
   (assert (system-state (phase abstraction)))
-  (printout t "Validation passed for Patient " ?pid crlf))
+  (printout t crlf ">> Validation Phase PASSED. Proceeding to Abstraction..." crlf))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                      END OF VALIDATION PHASE RULES                         ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

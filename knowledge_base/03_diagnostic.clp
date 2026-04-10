@@ -1,58 +1,87 @@
-;;; ============================================================================
-;;; DIAGNOSTIC MODULE
-;;; Generates final diagnostic conclusions based on clinical findings
-;;; Executes during the diagnostic phase
-;;; ============================================================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                          DIAGNOSTIC PHASE RULES                            ;;
+;;                     Clinical Decision and Diagnosis Formation               ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Rule: Diagnose Type 2 Diabetes (both markers in diabetic range)
+;; Rule: Diagnose Type-2 Diabetes
+;;   Type-2 Diabetes is diagnosed when BOTH FPG and HbA1c are in diabetic range
+;;   - FPG >= 126 mg/dL (fasting glucose indicator)
+;;   - HbA1c >= 6.5% (3-month average glucose control indicator)
+;;   A diagnosis requires confirmation by at least one repeated test in clinical practice,
+;;   but this system demonstrates diagnosis on combined criteria.
 (defrule diagnose-type2-diabetes
-  "Type 2 Diabetes diagnosis requires BOTH FPG and HbA1c in diabetic range"
+  (declare (salience 75))
   (system-state (phase diagnostic))
-  (patient (id ?pid))
+  (patient (id ?pid) (fpg ?fpg) (hba1c ?hba1c))
   (clinical-finding (patient-id ?pid) (biomarker fpg) (condition diabetic-range))
   (clinical-finding (patient-id ?pid) (biomarker hba1c) (condition diabetic-range))
   =>
-  (assert (diagnosis (patient-id ?pid) 
-                     (classification type-2-diabetes)
-                     (justification "Both FPG >= 126 mg/dL and HbA1c >= 6.5% meet diagnostic criteria for Type 2 Diabetes Mellitus")))
-  (printout t "DIAGNOSIS: Patient " ?pid " - Type 2 Diabetes Mellitus" crlf))
+  (bind ?justification
+    (str-cat
+      "Patient meets diagnostic criteria for Type-2 Diabetes: "
+      "FPG=" ?fpg "mg/dL (>= 126), "
+      "HbA1c=" ?hba1c "% (>= 6.5%)"))
+  (assert (diagnosis
+    (patient-id ?pid)
+    (classification Type-2-Diabetes)
+    (justification ?justification))))
 
-;;; Rule: Diagnose Prediabetes (mixed markers or prediabetic range)
-(defrule diagnose-prediabetes
-  "Prediabetes diagnosis when at least one marker is elevated but not both diabetic"
+;; Rule: No Diabetes Diagnosis - Non-Diabetic FPG and HbA1c
+;;   If both biomarkers are below diagnostic thresholds, diabetes is not indicated
+(defrule diagnose-no-diabetes
+  (declare (salience 75))
   (system-state (phase diagnostic))
-  (patient (id ?pid))
-  (or (clinical-finding (patient-id ?pid) (condition prediabetic-range))
-      (and (clinical-finding (patient-id ?pid) (biomarker fpg) (condition diabetic-range))
-           (clinical-finding (patient-id ?pid) (biomarker hba1c) (condition ~diabetic-range)))
-      (and (clinical-finding (patient-id ?pid) (biomarker hba1c) (condition diabetic-range))
-           (clinical-finding (patient-id ?pid) (biomarker fpg) (condition ~diabetic-range))))
-  (not (diagnosis (patient-id ?pid)))
+  (patient (id ?pid) (fpg ?fpg) (hba1c ?hba1c))
+  (clinical-finding (patient-id ?pid) (biomarker fpg) (condition non-diabetic-range))
+  (clinical-finding (patient-id ?pid) (biomarker hba1c) (condition non-diabetic-range))
   =>
-  (assert (diagnosis (patient-id ?pid) 
-                     (classification prediabetes)
-                     (justification "Elevated biomarkers indicate impaired glucose metabolism (Prediabetes) - recommend lifestyle modifications")))
-  (printout t "DIAGNOSIS: Patient " ?pid " - Prediabetes (Impaired Glucose Metabolism)" crlf))
+  (bind ?justification
+    (str-cat
+      "Patient does NOT meet diagnostic criteria for diabetes: "
+      "FPG=" ?fpg "mg/dL (< 126), "
+      "HbA1c=" ?hba1c "% (< 6.5%)"))
+  (assert (diagnosis
+    (patient-id ?pid)
+    (classification No-Diabetes)
+    (justification ?justification))))
 
-;;; Rule: Diagnose Normal
-(defrule diagnose-normal
-  "Normal diagnosis when both markers are in normal range"
+;; Rule: Inconclusive Diagnosis - Mixed Biomarker Results
+;;   If biomarkers yield discordant results (one diabetic, one non-diabetic),
+;;   diagnosis is inconclusive and requires further clinical evaluation
+(defrule diagnose-inconclusive
+  (declare (salience 75))
   (system-state (phase diagnostic))
-  (patient (id ?pid))
-  (clinical-finding (patient-id ?pid) (biomarker fpg) (condition normal-range))
-  (clinical-finding (patient-id ?pid) (biomarker hba1c) (condition normal-range))
+  (patient (id ?pid) (fpg ?fpg) (hba1c ?hba1c))
+  (or
+    (and
+      (clinical-finding (patient-id ?pid) (biomarker fpg) (condition diabetic-range))
+      (clinical-finding (patient-id ?pid) (biomarker hba1c) (condition non-diabetic-range)))
+    (and
+      (clinical-finding (patient-id ?pid) (biomarker fpg) (condition non-diabetic-range))
+      (clinical-finding (patient-id ?pid) (biomarker hba1c) (condition diabetic-range))))
   =>
-  (assert (diagnosis (patient-id ?pid) 
-                     (classification normal)
-                     (justification "Both FPG < 100 mg/dL and HbA1c < 5.7% indicate normal glucose metabolism")))
-  (printout t "DIAGNOSIS: Patient " ?pid " - Normal Glucose Metabolism" crlf))
+  (bind ?justification
+    (str-cat
+      "Inconclusive: Biomarkers are discordant. "
+      "FPG=" ?fpg "mg/dL, HbA1c=" ?hba1c "%. "
+      "Recommend repeat testing and clinical correlation."))
+  (assert (diagnosis
+    (patient-id ?pid)
+    (classification Inconclusive)
+    (justification ?justification))))
 
-;;; Rule: Mark diagnostic phase complete
-(defrule diagnostic-complete
-  "Transition to complete state after diagnosis is established"
-  ?state <- (system-state (phase diagnostic))
+;; Rule: Transition to Reporting phase after diagnosis
+;;   Once diagnosis has been formulated, transition to the reporting phase
+;;   for presentation of results to the user
+(defrule diagnostic-transition-to-reporting
+  (declare (salience -50))
+  (system-state (phase diagnostic))
   (diagnosis (patient-id ?pid))
   =>
-  (retract ?state)
-  (assert (system-state (phase complete)))
-  (printout t "Diagnostic reasoning complete for Patient " ?pid crlf))
+  (retract (system-state (phase diagnostic)))
+  (assert (system-state (phase reporting)))
+  (printout t crlf ">> Diagnostic Phase COMPLETE. Proceeding to Report Generation..." crlf))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                       END OF DIAGNOSTIC PHASE RULES                        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

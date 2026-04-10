@@ -1,83 +1,79 @@
-;;; ============================================================================
-;;; ABSTRACTION MODULE
-;;; Transforms raw biomarker values into clinical interpretations
-;;; Executes during the abstraction phase
-;;; ============================================================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                           ABSTRACTION PHASE RULES                          ;;
+;;              Feature Extraction and Biomarker Classification                 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Rule: Classify FPG in diabetic range
+;; Rule: Abstract FPG Biomarker - Diabetic Range Classification
+;;   According to WHO/ADA diagnostic criteria:
+;;   - FPG >= 126 mg/dL indicates diabetic-range glucose level
+;;   This rule extracts and classifies the FPG biomarker
 (defrule abstract-fpg-diabetic
-  "FPG >= 126 mg/dL indicates diabetic range per ADA criteria"
+  (declare (salience 75))
   (system-state (phase abstraction))
-  (patient (id ?pid) (fpg ?fpg&:(>= ?fpg 126.0)))
+  (patient (id ?pid) (fpg ?fpg))
+  (test (>= ?fpg 126.0))
   =>
-  (assert (clinical-finding (patient-id ?pid) 
-                            (biomarker fpg) 
-                            (condition diabetic-range)))
-  (printout t "Clinical Finding: Patient " ?pid " - FPG " ?fpg " mg/dL (Diabetic Range)" crlf))
+  (assert (clinical-finding
+    (patient-id ?pid)
+    (biomarker fpg)
+    (condition diabetic-range))))
 
-;;; Rule: Classify FPG in prediabetic range
-(defrule abstract-fpg-prediabetic
-  "FPG 100-125 mg/dL indicates prediabetic range"
+;; Rule: Abstract FPG Biomarker - Non-Diabetic Classification
+;;   According to WHO/ADA diagnostic criteria:
+;;   - FPG < 126 mg/dL indicates non-diabetic range (prediabetic or normal)
+(defrule abstract-fpg-non-diabetic
+  (declare (salience 75))
   (system-state (phase abstraction))
-  (patient (id ?pid) (fpg ?fpg&:(>= ?fpg 100.0)&:(< ?fpg 126.0)))
+  (patient (id ?pid) (fpg ?fpg))
+  (test (< ?fpg 126.0))
   =>
-  (assert (clinical-finding (patient-id ?pid) 
-                            (biomarker fpg) 
-                            (condition prediabetic-range)))
-  (printout t "Clinical Finding: Patient " ?pid " - FPG " ?fpg " mg/dL (Prediabetic Range)" crlf))
+  (assert (clinical-finding
+    (patient-id ?pid)
+    (biomarker fpg)
+    (condition non-diabetic-range))))
 
-;;; Rule: Classify FPG in normal range
-(defrule abstract-fpg-normal
-  "FPG < 100 mg/dL indicates normal range"
-  (system-state (phase abstraction))
-  (patient (id ?pid) (fpg ?fpg&:(< ?fpg 100.0)))
-  =>
-  (assert (clinical-finding (patient-id ?pid) 
-                            (biomarker fpg) 
-                            (condition normal-range)))
-  (printout t "Clinical Finding: Patient " ?pid " - FPG " ?fpg " mg/dL (Normal Range)" crlf))
-
-;;; Rule: Classify HbA1c in diabetic range
+;; Rule: Abstract HbA1c Biomarker - Diabetic Range Classification
+;;   According to WHO/ADA diagnostic criteria:
+;;   - HbA1c >= 6.5% indicates diabetic-range glycemic control
+;;   This rule extracts and classifies the HbA1c biomarker
 (defrule abstract-hba1c-diabetic
-  "HbA1c >= 6.5% indicates diabetic range per ADA criteria"
+  (declare (salience 75))
   (system-state (phase abstraction))
-  (patient (id ?pid) (hba1c ?hba1c&:(>= ?hba1c 6.5)))
+  (patient (id ?pid) (hba1c ?hba1c))
+  (test (>= ?hba1c 6.5))
   =>
-  (assert (clinical-finding (patient-id ?pid) 
-                            (biomarker hba1c) 
-                            (condition diabetic-range)))
-  (printout t "Clinical Finding: Patient " ?pid " - HbA1c " ?hba1c "% (Diabetic Range)" crlf))
+  (assert (clinical-finding
+    (patient-id ?pid)
+    (biomarker hba1c)
+    (condition diabetic-range))))
 
-;;; Rule: Classify HbA1c in prediabetic range
-(defrule abstract-hba1c-prediabetic
-  "HbA1c 5.7-6.4% indicates prediabetic range"
+;; Rule: Abstract HbA1c Biomarker - Non-Diabetic Classification
+;;   According to WHO/ADA diagnostic criteria:
+;;   - HbA1c < 6.5% indicates non-diabetic range (prediabetic or normal)
+(defrule abstract-hba1c-non-diabetic
+  (declare (salience 75))
   (system-state (phase abstraction))
-  (patient (id ?pid) (hba1c ?hba1c&:(>= ?hba1c 5.7)&:(< ?hba1c 6.5)))
+  (patient (id ?pid) (hba1c ?hba1c))
+  (test (< ?hba1c 6.5))
   =>
-  (assert (clinical-finding (patient-id ?pid) 
-                            (biomarker hba1c) 
-                            (condition prediabetic-range)))
-  (printout t "Clinical Finding: Patient " ?pid " - HbA1c " ?hba1c "% (Prediabetic Range)" crlf))
+  (assert (clinical-finding
+    (patient-id ?pid)
+    (biomarker hba1c)
+    (condition non-diabetic-range))))
 
-;;; Rule: Classify HbA1c in normal range
-(defrule abstract-hba1c-normal
-  "HbA1c < 5.7% indicates normal range"
+;; Rule: Transition to Diagnostic phase after abstraction
+;;   Once all biomarkers have been abstracted and classified, transition to diagnosis
+;;   Low salience ensures this rule fires only after all abstraction rules have executed
+(defrule abstract-transition-to-diagnostic
+  (declare (salience -50))
   (system-state (phase abstraction))
-  (patient (id ?pid) (hba1c ?hba1c&:(< ?hba1c 5.7)))
-  =>
-  (assert (clinical-finding (patient-id ?pid) 
-                            (biomarker hba1c) 
-                            (condition normal-range)))
-  (printout t "Clinical Finding: Patient " ?pid " - HbA1c " ?hba1c "% (Normal Range)" crlf))
-
-;;; Rule: Advance to diagnostic phase after abstraction
-(defrule abstraction-complete
-  "Transition to diagnostic phase after clinical findings are established"
-  ?state <- (system-state (phase abstraction))
-  (patient (id ?pid))
   (clinical-finding (patient-id ?pid) (biomarker fpg))
   (clinical-finding (patient-id ?pid) (biomarker hba1c))
   =>
-  (retract ?state)
+  (retract (system-state (phase abstraction)))
   (assert (system-state (phase diagnostic)))
-  (printout t "Abstraction complete, proceeding to diagnosis..." crlf))
+  (printout t crlf ">> Abstraction Phase COMPLETE. Proceeding to Diagnostic..." crlf))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                      END OF ABSTRACTION PHASE RULES                        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

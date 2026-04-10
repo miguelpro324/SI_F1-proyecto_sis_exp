@@ -1,31 +1,42 @@
-;;; ============================================================================
-;;; TEMPLATES MODULE
-;;; Defines all fact templates for the diabetes diagnosis expert system
-;;; ============================================================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                    EXPERT SYSTEM TEMPLATE DEFINITIONS                      ;;
+;;                     Diabetes Diagnosis - Data Structures                    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Patient biomarker data
+;; Template: Patient Information
+;;   - id: Unique identifier for the patient (SYMBOL)
+;;   - fpg: Fasting Plasma Glucose level in mg/dL (FLOAT)
+;;   - hba1c: Hemoglobin A1c percentage (FLOAT)
 (deftemplate patient
-  "Represents raw clinical data for a patient"
-  (slot id (type INTEGER))
-  (slot fpg (type FLOAT) (default 0.0))      ; Fasting Plasma Glucose (mg/dL)
-  (slot hba1c (type FLOAT) (default 0.0)))   ; Hemoglobin A1c (%)
+  (slot id (type SYMBOL))
+  (slot fpg (type FLOAT))
+  (slot hba1c (type FLOAT)))
 
-;;; Clinical abstraction layer
+;; Template: Clinical Finding
+;;   - patient-id: Reference to the patient record (SYMBOL)
+;;   - biomarker: The specific biomarker being evaluated (SYMBOL)
+;;   - condition: The clinical classification of the biomarker (SYMBOL)
+;;   Examples: biomarker=fpg, condition=diabetic-range
 (deftemplate clinical-finding
-  "Represents interpreted biomarker conditions"
-  (slot patient-id (type INTEGER))
-  (slot biomarker (type SYMBOL))             ; fpg | hba1c
-  (slot condition (type SYMBOL)))            ; diabetic-range | normal-range | prediabetic-range
+  (slot patient-id (type SYMBOL))
+  (slot biomarker (type SYMBOL))
+  (slot condition (type SYMBOL)))
 
-;;; Final diagnosis output
+;; Template: Diagnosis Result
+;;   - patient-id: Reference to the patient record (SYMBOL)
+;;   - classification: The diagnosed condition (SYMBOL)
+;;   - justification: Textual explanation of the diagnosis (STRING)
 (deftemplate diagnosis
-  "Represents the final diagnostic conclusion"
-  (slot patient-id (type INTEGER))
-  (slot classification (type SYMBOL))        ; type-2-diabetes | prediabetes | normal
+  (slot patient-id (type SYMBOL))
+  (slot classification (type SYMBOL))
   (slot justification (type STRING)))
 
-;;; System control state machine
+;; Template: System Control State
+;;   - phase: Current execution phase of the forward-chaining engine (SYMBOL)
+;;   Phases: validation -> abstraction -> diagnostic -> reporting
 (deftemplate system-state
-  "Controls the inference engine execution phases"
-  (slot phase (type SYMBOL)                  ; startup | validation | abstraction | diagnostic | complete | error
-              (default startup)))
+  (slot phase (type SYMBOL)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                      END OF TEMPLATE DEFINITIONS                           ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

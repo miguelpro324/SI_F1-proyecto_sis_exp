@@ -1,144 +1,146 @@
-;;; ============================================================================
-;;; USER INTERFACE MODULE (CLI)
-;;; Handles all user interaction directly in CLIPS
-;;; Input collection, output formatting, and result display
-;;; ============================================================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                     COMMAND-LINE INTERFACE (CLI) RULES                     ;;
+;;              User Input/Output and System Initialization                    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; ============================================================================
-;;; STARTUP RULE - Triggered on (initial-fact)
-;;; ============================================================================
-
-(defrule startup-display-welcome
-  "Display welcome header and collect patient data from user"
+;; Rule: Initialize System and Capture Patient Input
+;;   Triggered by the initial-fact (automatically asserted by CLIPS on startup)
+;;   Displays the application header, collects patient data, and initializes the
+;;   expert system by asserting the patient record and transitioning to validation
+(defrule cli-initialize-and-capture-input
+  (declare (salience 100))
   (initial-fact)
   =>
-  
-  ;; Display welcome banner
-  (printout t crlf)
-  (printout t "========================================" crlf)
-  (printout t "  DIABETES DIAGNOSIS EXPERT SYSTEM" crlf)
-  (printout t "  Rule-Based Medical Inference Engine" crlf)
-  (printout t "========================================" crlf)
+  ;; Display application header and instructions
+  (printout t crlf "=====================================================")
+  (printout t crlf "   EXPERT SYSTEM FOR DIABETES DIAGNOSIS")
+  (printout t crlf "   Using Forward-Chaining Architecture in CLIPS")
+  (printout t crlf "=====================================================")
   (printout t crlf)
   
-  ;; Collect Patient ID
-  (printout t "--- Patient Data Entry ---" crlf)
-  (printout t "Enter Patient ID (integer): ")
+  ;; Capture patient identifier
+  (printout t "Enter Patient ID (symbol, e.g., P001): ")
   (bind ?patient-id (read))
+  (printout t)
   
-  ;; Collect Fasting Plasma Glucose
-  (printout t "Enter Fasting Plasma Glucose (FPG) in mg/dL (float): ")
+  ;; Capture Fasting Plasma Glucose (FPG) value
+  (printout t "Enter Fasting Plasma Glucose - FPG (mg/dL, e.g., 140.5): ")
   (bind ?fpg (read))
+  (printout t)
   
-  ;; Collect HbA1c
-  (printout t "Enter Hemoglobin A1c (HbA1c) in % (float): ")
+  ;; Capture Hemoglobin A1c (HbA1c) value
+  (printout t "Enter Hemoglobin A1c - HbA1c (%, e.g., 7.2): ")
   (bind ?hba1c (read))
-  
-  ;; Display collected data
-  (printout t crlf)
-  (printout t "--- Data Summary ---" crlf)
-  (printout t "Patient ID: " ?patient-id crlf)
-  (printout t "FPG: " ?fpg " mg/dL" crlf)
-  (printout t "HbA1c: " ?hba1c "%" crlf)
   (printout t crlf)
   
-  ;; Assert patient fact into working memory
+  ;; Assert patient record into working memory
   (assert (patient (id ?patient-id) (fpg ?fpg) (hba1c ?hba1c)))
   
-  ;; Assert initial system state to start the inference chain
+  ;; Initialize system state to validation phase
   (assert (system-state (phase validation)))
-  
-  ;; Inform user that processing has begun
-  (printout t "Starting inference engine..." crlf crlf))
+  (printout t ">> Initialization COMPLETE. Entering Validation Phase..." crlf crlf))
 
-;;; ============================================================================
-;;; OUTPUT FORMATTING RULES
-;;; ============================================================================
-
-;;; Rule: Display successful diagnosis result
-(defrule output-diagnosis-success
-  "Format and display the final diagnosis in a clean medical report"
-  ?diagnosis <- (diagnosis (patient-id ?id) (classification ?classification) (justification ?justification))
-  (system-state (phase complete))
+;; Rule: Output Report for Successful Diagnosis
+;;   Triggered when the system reaches the reporting phase with a diagnosis result
+;;   Displays a professional, formatted medical diagnostic report
+(defrule cli-output-successful-diagnosis
+  (declare (salience 90))
+  (system-state (phase reporting))
+  (patient (id ?pid) (fpg ?fpg) (hba1c ?hba1c))
+  (diagnosis (patient-id ?pid) (classification ?class) (justification ?just))
   =>
-  
-  ;; Print diagnosis header
-  (printout t "========================================" crlf)
-  (printout t "  DIAGNOSTIC REPORT" crlf)
-  (printout t "========================================" crlf)
+  ;; Display formatted report header
+  (printout t crlf "=====================================================")
+  (printout t crlf "           MEDICAL DIAGNOSTIC REPORT")
+  (printout t crlf "=====================================================")
   (printout t crlf)
   
-  ;; Print patient ID
-  (printout t "Patient ID: " ?id crlf)
-  
-  ;; Format and print classification
-  (printout t "Classification: " ?classification crlf)
-  
-  ;; Print justification
-  (printout t "Justification: " crlf)
-  (printout t "  " ?justification crlf)
-  
-  ;; Print footer
+  ;; Display patient identification
+  (printout t "PATIENT IDENTIFIER: " ?pid crlf)
+  (printout t "-----------------------------------------------------")
   (printout t crlf)
-  (printout t "========================================" crlf)
+  
+  ;; Display biomarker values
+  (printout t "LAB MEASUREMENTS:" crlf)
+  (printout t "  Fasting Plasma Glucose (FPG):   " ?fpg " mg/dL" crlf)
+  (printout t "  Hemoglobin A1c (HbA1c):         " ?hba1c " %" crlf)
   (printout t crlf)
-  (printout t "Diagnostic reasoning complete." crlf crlf))
+  
+  ;; Display diagnosis result
+  (printout t "DIAGNOSIS: " ?class crlf)
+  (printout t "-----------------------------------------------------")
+  (printout t crlf)
+  
+  ;; Display clinical justification
+  (printout t "JUSTIFICATION:" crlf)
+  (printout t "  " ?just crlf)
+  (printout t crlf)
+  
+  ;; Display clinical recommendations based on diagnosis
+  (if (eq ?class Type-2-Diabetes)
+    then
+      (printout t "CLINICAL RECOMMENDATION:" crlf)
+      (printout t "  - Schedule comprehensive endocrine evaluation" crlf)
+      (printout t "  - Initiate lifestyle modification program" crlf)
+      (printout t "  - Consider pharmacological management" crlf)
+      (printout t "  - Arrange follow-up testing in 3 months" crlf)
+    else
+      (if (eq ?class Inconclusive)
+        then
+          (printout t "CLINICAL RECOMMENDATION:" crlf)
+          (printout t "  - Repeat diagnostic testing within 1-2 weeks" crlf)
+          (printout t "  - Consider oral glucose tolerance test (OGTT)" crlf)
+          (printout t "  - Discuss risk factors with healthcare provider" crlf)
+        else
+          (printout t "CLINICAL RECOMMENDATION:" crlf)
+          (printout t "  - Maintain current lifestyle and diet" crlf)
+          (printout t "  - Routine follow-up testing in 1-2 years" crlf)
+          (printout t "  - Continue health monitoring" crlf)))
+  
+  (printout t crlf)
+  (printout t "=====================================================")
+  (printout t crlf "           END OF DIAGNOSTIC REPORT")
+  (printout t crlf "=====================================================")
+  (printout t crlf crlf))
 
-;;; Rule: Display validation error message
-(defrule output-validation-error
-  "Display error message if validation fails"
-  (system-state (phase error))
+;; Rule: Output Report for Validation Failure
+;;   Triggered when invalid data is detected during the validation phase
+;;   Displays an error message with diagnostic guidance
+(defrule cli-output-validation-error
+  (declare (salience 90))
+  (system-state (phase validation))
+  (invalid-data (patient-id ?pid) (error ?error-message))
   =>
+  ;; Display error report header
+  (printout t crlf "=====================================================")
+  (printout t crlf "              DATA VALIDATION ERROR")
+  (printout t crlf "=====================================================")
+  (printout t crlf)
   
-  ;; Print error header
+  ;; Display patient ID
+  (printout t "PATIENT IDENTIFIER: " ?pid crlf)
+  (printout t "-----------------------------------------------------")
   (printout t crlf)
-  (printout t "========================================" crlf)
-  (printout t "  VALIDATION ERROR" crlf)
-  (printout t "========================================" crlf)
-  (printout t crlf)
-  (printout t "The input data failed validation." crlf)
-  (printout t "Please check for negative values or extreme measurements." crlf)
-  (printout t crlf)
-  (printout t "========================================" crlf)
-  (printout t crlf)
-  (printout t "Processing halted." crlf crlf))
-
-;;; Rule: Display abstraction phase status
-(defrule output-abstraction-status
-  "Print status message when entering abstraction phase"
-  ?state <- (system-state (phase abstraction))
-  =>
   
-  (printout t "========== ABSTRACTION PHASE ==========" crlf)
-  (printout t "Interpreting biomarker values..." crlf crlf))
+  ;; Display error details
+  (printout t "ERROR TYPE: " ?error-message crlf)
+  (printout t crlf "DETAILS:" crlf)
+  (printout t "  One or more input values are clinically implausible.")
+  (printout t crlf "  Please verify the following constraints:" crlf)
+  (printout t crlf)
+  (printout t "  - FPG must be non-negative (>= 0 mg/dL)" crlf)
+  (printout t "  - FPG should typically be < 800 mg/dL" crlf)
+  (printout t "  - HbA1c must be non-negative (>= 0%)" crlf)
+  (printout t "  - HbA1c should typically be < 15%" crlf)
+  (printout t crlf)
+  (printout t "ACTION REQUIRED:" crlf)
+  (printout t "  Please re-run the system with corrected input values." crlf)
+  (printout t crlf)
+  (printout t "=====================================================")
+  (printout t crlf "           END OF ERROR REPORT")
+  (printout t crlf "=====================================================")
+  (printout t crlf crlf))
 
-;;; Rule: Display diagnostic phase status
-(defrule output-diagnostic-status
-  "Print status message when entering diagnostic phase"
-  ?state <- (system-state (phase diagnostic))
-  =>
-  
-  (printout t "========== DIAGNOSTIC PHASE ==========" crlf)
-  (printout t "Generating diagnostic conclusions..." crlf crlf))
-
-;;; ============================================================================
-;;; INFERENCE TRACE (OPTIONAL - Uncomment for debugging)
-;;; ============================================================================
-
-;;; Uncomment these rules if you want detailed rule firing information:
-
-;;; (defrule trace-validation-passed
-;;;   "Print when validation phase completes successfully"
-;;;   (system-state (phase abstraction))
-;;;   =>
-;;;   (printout t "✓ Validation passed" crlf crlf))
-
-;;; (defrule trace-clinical-findings
-;;;   "Print clinical findings as they are asserted"
-;;;   (clinical-finding (patient-id ?pid) (biomarker ?bm) (condition ?cond))
-;;;   =>
-;;;   (printout t "  → Clinical Finding: Patient " ?pid " - " ?bm " " ?cond crlf))
-
-;;; ============================================================================
-;;; EOF - 04_cli.clp
-;;; ============================================================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                         END OF CLI INTERFACE RULES                         ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

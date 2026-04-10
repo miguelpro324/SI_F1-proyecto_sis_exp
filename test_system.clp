@@ -1,0 +1,7 @@
+(batch "knowledge_base/00_templates.clp")
+(batch "knowledge_base/01_validation.clp")
+(batch "knowledge_base/02_abstraction.clp")
+(batch "knowledge_base/03_diagnostic.clp")
+(batch "knowledge_base/04_cli.clp")
+(reset)
+(run)
