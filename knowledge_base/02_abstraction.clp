@@ -70,7 +70,6 @@
   (clinical-finding (patient-id ?pid) (biomarker fpg))
   (clinical-finding (patient-id ?pid) (biomarker hba1c))
   =>
-  (retract (system-state (phase abstraction)))
   (assert (system-state (phase diagnostic)))
   (printout t crlf ">> Abstraction Phase COMPLETE. Proceeding to Diagnostic..." crlf))
 

@@ -37,6 +37,13 @@
 (deftemplate system-state
   (slot phase (type SYMBOL)))
 
+;; Template: Invalid Data Signal
+;;   - patient-id: Reference to the patient with invalid data (SYMBOL)
+;;   - error: Description of the validation error (STRING)
+(deftemplate invalid-data
+  (slot patient-id (type SYMBOL))
+  (slot error (type STRING)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                      END OF TEMPLATE DEFINITIONS                           ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

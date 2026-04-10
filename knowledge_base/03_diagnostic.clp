@@ -78,7 +78,6 @@
   (system-state (phase diagnostic))
   (diagnosis (patient-id ?pid))
   =>
-  (retract (system-state (phase diagnostic)))
   (assert (system-state (phase reporting)))
   (printout t crlf ">> Diagnostic Phase COMPLETE. Proceeding to Report Generation..." crlf))
 

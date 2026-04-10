@@ -3,42 +3,22 @@
 ;;              User Input/Output and System Initialization                    ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Rule: Initialize System and Capture Patient Input
+;; Rule: Initialize System and Display Header
 ;;   Triggered by the initial-fact (automatically asserted by CLIPS on startup)
-;;   Displays the application header, collects patient data, and initializes the
-;;   expert system by asserting the patient record and transitioning to validation
-(defrule cli-initialize-and-capture-input
+;;   Displays the application header. Patient data is provided via facts
+;;   asserted by the run.sh wrapper script.
+(defrule cli-initialize-system-header
   (declare (salience 100))
   (initial-fact)
   =>
   ;; Display application header and instructions
-  (printout t crlf "=====================================================")
-  (printout t crlf "   EXPERT SYSTEM FOR DIABETES DIAGNOSIS")
-  (printout t crlf "   Using Forward-Chaining Architecture in CLIPS")
-  (printout t crlf "=====================================================")
   (printout t crlf)
-  
-  ;; Capture patient identifier
-  (printout t "Enter Patient ID (symbol, e.g., P001): ")
-  (bind ?patient-id (read))
-  (printout t)
-  
-  ;; Capture Fasting Plasma Glucose (FPG) value
-  (printout t "Enter Fasting Plasma Glucose - FPG (mg/dL, e.g., 140.5): ")
-  (bind ?fpg (read))
-  (printout t)
-  
-  ;; Capture Hemoglobin A1c (HbA1c) value
-  (printout t "Enter Hemoglobin A1c - HbA1c (%, e.g., 7.2): ")
-  (bind ?hba1c (read))
+  (printout t "=====================================================" crlf)
+  (printout t "   EXPERT SYSTEM FOR DIABETES DIAGNOSIS" crlf)
+  (printout t "   Using Forward-Chaining Architecture in CLIPS" crlf)
+  (printout t "=====================================================" crlf)
   (printout t crlf)
-  
-  ;; Assert patient record into working memory
-  (assert (patient (id ?patient-id) (fpg ?fpg) (hba1c ?hba1c)))
-  
-  ;; Initialize system state to validation phase
-  (assert (system-state (phase validation)))
-  (printout t ">> Initialization COMPLETE. Entering Validation Phase..." crlf crlf))
+  (flush))
 
 ;; Rule: Output Report for Successful Diagnosis
 ;;   Triggered when the system reaches the reporting phase with a diagnosis result

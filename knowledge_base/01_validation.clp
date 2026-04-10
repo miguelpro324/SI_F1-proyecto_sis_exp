@@ -33,7 +33,7 @@
   (patient (id ?pid) (hba1c ?hba1c))
   (test (> ?hba1c 15.0))
   =>
-  (printow t crlf "ERROR: Unrealistic HbA1c value detected (" ?hba1c "%)." crlf)
+  (printout t crlf "ERROR: Unrealistic HbA1c value detected (" ?hba1c "%)." crlf)
   (assert (invalid-data (patient-id ?pid) (error "Excessive HbA1c"))))
 
 ;; Rule: Detect unrealistic FPG upper bound
@@ -55,7 +55,6 @@
   (patient (id ?pid))
   (not (invalid-data))
   =>
-  (retract (system-state (phase validation)))
   (assert (system-state (phase abstraction)))
   (printout t crlf ">> Validation Phase PASSED. Proceeding to Abstraction..." crlf))
 
